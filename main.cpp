@@ -1,11 +1,12 @@
 #include <cstdio>
+#include <array>
 #include <iostream>
-//#include <filesystem>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
+#include <filesystem>
 #include "sha1.h"
 
 int main(int argc, char** argv) {
@@ -24,17 +25,29 @@ int main(int argc, char** argv) {
 
 		size_t thresholdSize = [&sThresholdSize]() {size_t res = 0; istringstream s(sThresholdSize); s >> res; return res; }();
 
-		// TODO: Ensure that the blob storage directory exists.
+		// Ensure that the blob storage directory exists.
+		using namespace std::experimental::filesystem;
+		create_directories(path(sLargeBlobStorageDir.data()));
 
 		// Read the file from standard input
 		string sBuffer;
+		/* // Debugging on MSVC
+		if (argc > 4) {
+			size_t sz = file_size(path(argv[4]));
+			std::unique_ptr<FILE, decltype(&fclose)> pIn(fopen(argv[4], "r"), &fclose);
+			sBuffer.resize(sz); // This can be LARGE
+			fread(sBuffer.data(), 1, sz, pIn.get());
+			if (ferror(pIn.get())) throw;
+		}
+		else {
+			*/
 		fseek(stdin, 0L, SEEK_END);
 		size_t sz = ftell(stdin);
 		rewind(stdin);
 		sBuffer.resize(sz); // This can be LARGE
 		fread(sBuffer.data(), 1, sz, stdin);
-		if (ferror(stdin)) return true;
-
+		if (ferror(stdin)) throw;
+		//}
 
 		// Is the file a candidate for storage?
 		bool doStore = false;
@@ -49,21 +62,29 @@ int main(int argc, char** argv) {
 		// 2) Write the blob to the storage directory, under path_to_storage_dir/SHA-1_hash.
 		// 3) Print the blob reference string to standard output.
 		else {
-			SHA1_CTX context;
-			uint8_t digest[20];
-			char outputHash[80];
-			SHA1_Init(&context);
-			SHA1_Update(&context, reinterpret_cast<uint8_t*>(sBuffer.data()), sBuffer.size());
-			SHA1_Final(&context, digest);
-			digest_to_hex(digest, outputHash);
-
+			auto getHash = [](std::string_view buffer) -> string {
+				SHA1_CTX context;
+				array<uint8_t, 20> digest;
+				array<char, 80> outputHash;
+				SHA1_Init(&context);
+				SHA1_Update(&context, reinterpret_cast<const uint8_t*>(buffer.data()), buffer.size());
+				SHA1_Final(&context, digest.data());
+				digest_to_hex(digest.data(), outputHash.data());
+				string sHash;
+				sHash += outputHash.data();
+				return sHash;
+			};
+			
+			auto hash = getHash(sBuffer);
+			
 			string blob_filepath(sLargeBlobStorageDir);
 			blob_filepath += "/";
-			blob_filepath += outputHash;
+			blob_filepath += hash;
 
 			string blob_pubURL(sLargeBlobPublicURL);
 			blob_pubURL += "/";
-			blob_pubURL += outputHash;
+			blob_pubURL += hash;
+
 			// Checking for pre-existing file here. If the file already existed and had data, then
 			// ftell will be nonzero.
 			std::unique_ptr<FILE, decltype(&fclose)> pFile(fopen(blob_filepath.c_str(), "a+b"), &fclose);

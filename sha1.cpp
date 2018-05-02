@@ -87,6 +87,7 @@ A million repetitions of "a"
 #pragma warning(disable : 4996)
 #pragma warning(disable : 4100)
 #endif
+#define SHA1HANDSOFF
 
 void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64]);
 
@@ -119,9 +120,18 @@ void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64])
 		uint8_t c[64];
 		uint32_t l[16];
 	} CHAR64LONG16;
-	CHAR64LONG16* block;
 
-	block = (CHAR64LONG16*)buffer;
+#ifdef SHA1HANDSOFF
+	CHAR64LONG16 block[1];  /* use array to appear as a pointer */
+	memcpy(block, buffer, 64);
+#else
+	/* The following had better never be used because it causes the
+	* pointer-to-const buffer to be cast into a pointer to non-const.
+	* And the result is written through.  I threw a "const" in, hoping
+	* this will cause a diagnostic.
+	*/
+	CHAR64LONG16* block = (const CHAR64LONG16*)buffer;
+#endif
 
 	/* Copy context->state[] to working vars */
 	a = state[0];
@@ -161,6 +171,9 @@ void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64])
 
 	/* Wipe variables */
 	a = b = c = d = e = 0;
+#ifdef SHA1HANDSOFF
+	memset(block, '\0', sizeof(block));
+#endif
 }
 
 

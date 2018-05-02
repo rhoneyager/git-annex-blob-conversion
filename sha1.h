@@ -6,11 +6,11 @@
 #pragma once
 #include <stdint.h>
 
-#if defined(_MSC_VER)
+//#if defined(_MSC_VER)
 
-#define ROTL32(x,y)	_rotl(x,y)
+//#define ROTL32(x,y)	_rotl(x,y)
 
-#else	//	defined(_MSC_VER)
+//#else	//	defined(_MSC_VER)
 
 inline uint32_t rotl32(uint32_t x, int8_t r)
 {
@@ -18,7 +18,7 @@ inline uint32_t rotl32(uint32_t x, int8_t r)
 }
 #define	ROTL32(x,y)	rotl32(x,y)
 
-#endif
+//#endif
 
 struct SHA1_CTX
 {
