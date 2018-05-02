@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
 			size_t currentPos = ftell(pFile.get());
 			if (currentPos == 0) // Only write if the file is empty.
 				fwrite(sBuffer.data(), 1, sBuffer.size(), pFile.get());
-			fprintf(stdout, "BLOB-CONVERTED: %s/%s", blob_pubURL.data(), outputHash);
+			fprintf(stdout, "BLOB-CONVERTED: %s\n", blob_pubURL.data());
 		}
 	}
 	catch (std::exception &e) {

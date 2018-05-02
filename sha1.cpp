@@ -258,8 +258,8 @@ void digest_to_hex(const uint8_t digest[SHA1_DIGEST_SIZE], char *output)
 			sprintf(c, "%02X", digest[i * 4 + j]);
 			c += 2;
 		}
-		sprintf(c, " ");
-		c += 1;
+		//sprintf(c, " ");
+		//c += 1;
 	}
 	*(c - 1) = '\0';
 }
