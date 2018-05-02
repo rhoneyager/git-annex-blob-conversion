@@ -67,6 +67,7 @@ int main(int argc, char** argv) {
 			// Checking for pre-existing file here. If the file already existed and had data, then
 			// ftell will be nonzero.
 			std::unique_ptr<FILE, decltype(&fclose)> pFile(fopen(blob_filepath.c_str(), "a+b"), &fclose);
+			fseek(pFile.get(), 0L, SEEK_END);
 			size_t currentPos = ftell(pFile.get());
 			if (currentPos == 0) // Only write if the file is empty.
 				fwrite(sBuffer.data(), 1, sBuffer.size(), pFile.get());
